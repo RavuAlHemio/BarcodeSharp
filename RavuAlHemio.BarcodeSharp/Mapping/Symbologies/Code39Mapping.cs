@@ -100,7 +100,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
             }
             if (unencodableSubstitute.HasValue && !Mappings.ContainsKey(unencodableSubstitute.Value))
             {
-                throw new ArgumentException("the substitute character is not encodable", "unencodableSubstitute");
+                throw new ArgumentException("the substitute character is not encodable", nameof(unencodableSubstitute));
             }
             
             try
@@ -122,7 +122,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
             }
             catch (KeyNotFoundException exc)
             {
-                throw new ArgumentException("string to encode contains an unencodable character", "stringToEncode", exc);
+                throw new ArgumentException("string to encode contains an unencodable character", nameof(stringToEncode), exc);
             }
         }
     }

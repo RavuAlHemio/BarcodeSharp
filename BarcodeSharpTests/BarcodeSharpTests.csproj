@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Mapping\Symbologies\Code39MappingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Mapping\Symbologies\Interleaved2Of5MappingTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RavuAlHemio.BarcodeSharp\RavuAlHemio.BarcodeSharp.csproj">
