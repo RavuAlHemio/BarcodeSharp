@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Immutable;
 
 namespace RavuAlHemio.BarcodeSharp.Mapping
 {
     /// <summary>
-    /// This interface represents a mapping for a two-dimensional barcode which can map a string into an array of
+    /// This interface represents a mapping for a one-dimensional barcode which can map a string into an array of
     /// booleans (representing the color of each bar).
     /// </summary>
-    public interface ITwoDimensionalBarcodeMapping
+    public interface IOneDimensionalBarcodeMapping
     {
         /// <summary>
         /// Returns whether the given string is encodable by this mapping.

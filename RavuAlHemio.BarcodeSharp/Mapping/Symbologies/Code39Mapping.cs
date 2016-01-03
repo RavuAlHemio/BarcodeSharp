@@ -8,7 +8,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
     /// <summary>
     /// Maps characters to Code39 bars.
     /// </summary>
-    public class Code39Mapping : ITwoDimensionalBarcodeMapping
+    public class Code39Mapping : IOneDimensionalBarcodeMapping
     {
         internal static readonly ImmutableDictionary<char, ImmutableArray<bool>> StandardMappings;
         internal static readonly ImmutableDictionary<char, ImmutableArray<bool>> SpecialMappings;
