@@ -24,8 +24,8 @@ namespace RavuAlHemio.BarcodeSharp.Mapping
         /// <param name="unencodableSubstitute">The character with which to substitute unencodable characters, or
         /// <c>null</c> to throw an exception instead.</param>
         /// <returns>The encoded barcode as a list of booleans where <c>true</c> is on and <c>false</c> is off.</returns>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="unencodableSubstitute"/> is <c>null</c> and
-        /// an unencodable character is encountered in <paramref name="stringToEncode"/>.</exception>
+        /// <exception cref="System.ArgumentException">Thrown if <paramref name="unencodableSubstitute"/> is
+        /// <c>null</c> and an unencodable character is encountered in <paramref name="stringToEncode"/>.</exception>
         ImmutableArray<bool> EncodeString(string stringToEncode, bool addStartStop = true, char? unencodableSubstitute = null);
     }
 }
