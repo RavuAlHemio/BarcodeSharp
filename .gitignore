@@ -188,3 +188,9 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+
+# generated NuGet packages
+*.nupkg
+
+# lockfile
+*.lock.json
