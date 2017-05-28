@@ -19,7 +19,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping
         /// Encodes the given string using this mapping.
         /// </summary>
         /// <param name="stringToEncode">The string to encode.</param>
-        /// <param name="addStartStop">Whether to wrap the data in start (<c>U+0002</c>) and stop (<c>U+0003</c>)
+        /// <param name="addStartStop">Whether to wrap the data in start (<c>U+E000</c>) and stop (<c>U+E001</c>)
         /// characters if the barcode symbology requires it.</param>
         /// <param name="unencodableSubstitute">The character with which to substitute unencodable characters, or
         /// <c>null</c> to throw an exception instead.</param>

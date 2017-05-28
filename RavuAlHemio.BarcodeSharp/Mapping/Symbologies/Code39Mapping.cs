@@ -54,8 +54,8 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
                 {'7', (new[] { true, false,  true, false, false,  true, false,  true,  true, false,  true,  true, false}).ToImmutableArray()},
                 {'8', (new[] { true,  true, false,  true, false, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
                 {'9', (new[] { true, false,  true,  true, false, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
-                {'\u0002', (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
-                {'\u0003', (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
+                {'\uE000', (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
+                {'\uE001', (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
                 {' ', (new[] { true, false, false,  true,  true, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
                 {'-', (new[] { true, false, false,  true, false,  true, false,  true,  true, false,  true,  true, false}).ToImmutableArray()},
                 {'.', (new[] { true,  true, false, false,  true, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
@@ -85,7 +85,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         /// Encodes the given string as a Code39 barcode.
         /// </summary>
         /// <param name="stringToEncode">The string to encode.</param>
-        /// <param name="addStartStop">Whether to wrap the data in start (<value>U+0002</value>) and stop (<value>U+0003</value>) characters.</param>
+        /// <param name="addStartStop">Whether to wrap the data in start (<value>U+E000</value>) and stop (<value>U+E001</value>) characters.</param>
         /// <param name="unencodableSubstitute">The character with which to substitute unencodable characters, or <c>null</c> to throw
         /// an exception instead.</param>
         /// <returns>The encoded barcode as a list of booleans where <value>true</value> is on and <value>false</value> is off.</returns>
@@ -96,7 +96,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
             var actualStringToEncode = stringToEncode;
             if (addStartStop)
             {
-                actualStringToEncode = "\u0002" + stringToEncode + "\u0003";
+                actualStringToEncode = "\uE000" + stringToEncode + "\uE001";
             }
             if (unencodableSubstitute.HasValue && !Mappings.ContainsKey(unencodableSubstitute.Value))
             {

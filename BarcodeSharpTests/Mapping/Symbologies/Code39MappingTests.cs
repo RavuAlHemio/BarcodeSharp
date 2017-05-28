@@ -68,7 +68,10 @@ namespace BarcodeSharpTests.Mapping.Symbologies
         public void NoTwoMappableCharactersExceptStartAndStopMapToTheSameSequence()
         {
             // remove stop, keep start
-            var mapTargets = Code39Mapping.Mappings.Where(m => m.Key != '\u0003').Select(m => m.Value).ToImmutableArray();
+            var mapTargets = Code39Mapping.Mappings
+                .Where(m => m.Key != BarcodeSharpConstants.StopCharacter)
+                .Select(m => m.Value)
+                .ToImmutableArray();
 
             for (int i = 0; i < mapTargets.Length; ++i)
             {
