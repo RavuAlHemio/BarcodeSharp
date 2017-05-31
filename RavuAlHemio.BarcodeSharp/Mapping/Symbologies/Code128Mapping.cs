@@ -45,6 +45,11 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         /// </summary>
         public bool AddCheckSymbol { get; set; }
 
+        /// <summary>
+        /// Whether <see cref="EncodeString" /> should try to find the most efficient encoding available.
+        /// </summary>
+        public bool Optimize { get; set; }
+
         static Code128Mapping()
         {
             FinalBar = IAC(true, true);
@@ -238,7 +243,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
                 '\u0003',      'c', NotEncoded,
                 '\u0004',      'd', NotEncoded,
                 '\u0005',      'e', NotEncoded,
-                '\u0006',      'f', NotEncoded,
+                '\u0006',      'f', NotEncoded, // 70
                 '\u0007',      'g', NotEncoded,
                 '\u0008',      'h', NotEncoded,
                 '\u0009',      'i', NotEncoded,
@@ -248,7 +253,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
                 '\u000D',      'm', NotEncoded,
                 '\u000E',      'n', NotEncoded,
                 '\u000F',      'o', NotEncoded,
-                '\u0010',      'p', NotEncoded,
+                '\u0010',      'p', NotEncoded, // 80
                 '\u0011',      'q', NotEncoded,
                 '\u0012',      'r', NotEncoded,
                 '\u0013',      's', NotEncoded,
@@ -258,7 +263,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
                 '\u0017',      'w', NotEncoded,
                 '\u0018',      'x', NotEncoded,
                 '\u0019',      'y', NotEncoded,
-                '\u001A',      'z', NotEncoded,
+                '\u001A',      'z', NotEncoded, // 90
                 '\u001B',      '{', NotEncoded,
                 '\u001C',      '|', NotEncoded,
                 '\u001D',      '}', NotEncoded,
@@ -268,7 +273,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
                    Func2,    Func2, NotEncoded,
                   ShiftB,   ShiftA, NotEncoded,
                  SwitchC,  SwitchC, NotEncoded,
-                 SwitchB,    Func4,    SwitchB,
+                 SwitchB,    Func4,    SwitchB, // 100
                    Func4,  SwitchA,    SwitchA,
                    Func1,    Func1,      Func1
             };
@@ -295,6 +300,7 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         {
             AddCheckSymbol = true;
             AddFinalBar = true;
+            Optimize = true;
         }
 
         private static ImmutableArray<T> IAC<T>(params T[] elements)
@@ -341,13 +347,41 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
                         .ToArray()
                 );
             }
-            if (!IsEncodable(stringToEncode))
+            if (!IsEncodable(actualStringToEncode))
             {
-                throw new ArgumentException("the string is not encodable using this symbology", nameof(stringToEncode));
+                throw new ArgumentException("the string is not encodable using this symbology", nameof(actualStringToEncode));
             }
 
-            // TODO
-            throw new NotImplementedException();
+            // start out with the naïve encoding
+            ImmutableList<int> values = EncodeNaively(actualStringToEncode);
+
+            if (Optimize)
+            {
+                values = FindOptimalEncoding(actualStringToEncode, values.Count);
+            }
+
+            if (AddCheckSymbol)
+            {
+                int checksum = CalculateChecksum(values);
+                values = values.Add(checksum);
+            }
+
+            // add the stop symbol
+            values = values.Add(CoreMapping[BarcodeSharpConstants.StopCharacter]);
+
+            ImmutableArray<bool>.Builder barBuilder = ImmutableArray.CreateBuilder<bool>();
+            barBuilder.AddRange(
+                values
+                    .SelectMany(v => ValueSymbols[v])
+                    .ToList()
+            );
+
+            if (AddFinalBar)
+            {
+                barBuilder.AddRange(FinalBar);
+            }
+
+            return barBuilder.ToImmutable();
         }
 
         protected static ImmutableList<int> EncodeNaively(string stringToEncode)
@@ -374,8 +408,56 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
 
             builder.Add(CoreMapping[mappingA ? StartA : StartB]);
 
-            // TODO
+            ImmutableDictionary<char, int> mapping = mappingA ? Mapping128A : Mapping128B;
+            foreach (char c in stringToEncode)
+            {
+                if (!mapping.ContainsKey(c))
+                {
+                    // switch over
+                    if (mappingA)
+                    {
+                        builder.Add(mapping[SwitchB]);
+                        mapping = Mapping128B;
+                    }
+                    else
+                    {
+                        builder.Add(mapping[SwitchA]);
+                        mapping = Mapping128A;
+                    }
+                    mappingA = !mappingA;
+
+                    // that one didn't contain it so this one must (we checked for full encodability previously)
+                    Debug.Assert(mapping.ContainsKey(c));
+                }
+                builder.Add(mapping[c]);
+            }
+
+            return builder.ToImmutable();
+        }
+
+        protected internal virtual ImmutableList<int> FindOptimalEncoding(string stringToEncode, int upperLimit)
+        {
             throw new NotImplementedException();
+        }
+
+        protected internal virtual int CalculateChecksum(ImmutableList<int> values)
+        {
+            Debug.Assert(values.Count > 0);
+            Debug.Assert(
+                values[0] == CoreMapping[StartA]
+                || values[0] == CoreMapping[StartB]
+                || values[0] == CoreMapping[StartC]
+            );
+            Debug.Assert(values.Last() != CoreMapping[BarcodeSharpConstants.StopCharacter]);
+
+            // yes, the start symbol and the first data symbol both have weight 1
+            int sum = (values[0] * 1) % 103;
+            for (int i = 1; i < values.Count; ++i)
+            {
+                sum = (sum + values[i] * i) % 103;
+            }
+
+            return sum;
         }
     }
 }
