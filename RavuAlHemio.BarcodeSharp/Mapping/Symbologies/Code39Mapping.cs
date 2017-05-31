@@ -14,6 +14,11 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         internal static readonly ImmutableDictionary<char, ImmutableArray<bool>> SpecialMappings;
         internal static readonly ImmutableDictionary<char, ImmutableArray<bool>> Mappings;
 
+        /// <summary>
+        /// Whether to wrap the data in start (<c>U+E000</c>) and stop (<c>U+E001</c>) characters.
+        /// </summary>
+        public bool AddStartStop { get; set; }
+
         static Code39Mapping()
         {
             var standardMappings = new Dictionary<char, ImmutableArray<bool>>
@@ -54,8 +59,8 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
                 {'7', (new[] { true, false,  true, false, false,  true, false,  true,  true, false,  true,  true, false}).ToImmutableArray()},
                 {'8', (new[] { true,  true, false,  true, false, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
                 {'9', (new[] { true, false,  true,  true, false, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
-                {'\uE000', (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
-                {'\uE001', (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
+                {BarcodeSharpConstants.StartCharacter, (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
+                {BarcodeSharpConstants.StopCharacter, (new[] { true, false, false,  true, false,  true,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
                 {' ', (new[] { true, false, false,  true,  true, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
                 {'-', (new[] { true, false, false,  true, false,  true, false,  true,  true, false,  true,  true, false}).ToImmutableArray()},
                 {'.', (new[] { true,  true, false, false,  true, false,  true, false,  true,  true, false,  true, false}).ToImmutableArray()},
@@ -74,6 +79,11 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
             Mappings = standardMappings.FollowedBy(specialMappings).ToImmutableDictionary();
         }
 
+        public Code39Mapping()
+        {
+            AddStartStop = true;
+        }
+
         public bool IsEncodable(string stringToEncode)
         {
             return stringToEncode
@@ -85,24 +95,24 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         /// Encodes the given string as a Code39 barcode.
         /// </summary>
         /// <param name="stringToEncode">The string to encode.</param>
-        /// <param name="addStartStop">Whether to wrap the data in start (<value>U+E000</value>) and stop (<value>U+E001</value>) characters.</param>
         /// <param name="unencodableSubstitute">The character with which to substitute unencodable characters, or <c>null</c> to throw
         /// an exception instead.</param>
         /// <returns>The encoded barcode as a list of booleans where <value>true</value> is on and <value>false</value> is off.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="unencodableSubstitute"/> is <c>null</c> and an unencodable
         /// character is encountered in <paramref name="stringToEncode"/>.</exception>
-        public ImmutableArray<bool> EncodeString(string stringToEncode, bool addStartStop = true, char? unencodableSubstitute = null)
+        public ImmutableArray<bool> EncodeString(string stringToEncode, char? unencodableSubstitute = null)
         {
             var actualStringToEncode = stringToEncode;
-            if (addStartStop)
+            if (AddStartStop)
             {
-                actualStringToEncode = "\uE000" + stringToEncode + "\uE001";
+                actualStringToEncode =
+                    BarcodeSharpConstants.StartCharacter + stringToEncode + BarcodeSharpConstants.StopCharacter;
             }
             if (unencodableSubstitute.HasValue && !Mappings.ContainsKey(unencodableSubstitute.Value))
             {
                 throw new ArgumentException("the substitute character is not encodable", nameof(unencodableSubstitute));
             }
-            
+
             try
             {
                 if (unencodableSubstitute.HasValue)

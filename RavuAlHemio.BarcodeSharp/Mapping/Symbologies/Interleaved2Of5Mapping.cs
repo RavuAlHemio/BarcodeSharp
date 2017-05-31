@@ -14,12 +14,17 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         internal static readonly ImmutableDictionary<char, ImmutableArray<bool>> StandardMappings;
         internal static readonly ImmutableDictionary<char, ImmutableArray<bool>> MappingWidths;
 
+        /// <summary>
+        /// Whether to wrap the data in start (<c>U+E000</c>) and stop (<c>U+E001</c>) characters.
+        /// </summary>
+        public bool AddStartStop { get; set; }
+
         static Interleaved2Of5Mapping()
         {
             var standardMappings = new Dictionary<char, ImmutableArray<bool>>
             {
-                {'\uE000', (new[] { true, false,  true, false}).ToImmutableArray()},
-                {'\uE001', (new[] { true,  true, false,  true}).ToImmutableArray()},
+                {BarcodeSharpConstants.StartCharacter, (new[] { true, false,  true, false}).ToImmutableArray()},
+                {BarcodeSharpConstants.StopCharacter, (new[] { true,  true, false,  true}).ToImmutableArray()},
             };
             StandardMappings = standardMappings.ToImmutableDictionary();
 
@@ -39,6 +44,11 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
             MappingWidths = mappingWidths.ToImmutableDictionary();
         }
 
+        public Interleaved2Of5Mapping()
+        {
+            AddStartStop = true;
+        }
+
         private bool IsEncodable(char charToEncode)
         {
             return StandardMappings.ContainsKey (charToEncode) || MappingWidths.ContainsKey (charToEncode);
@@ -55,18 +65,18 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         /// Encodes the given string as a Code39 barcode.
         /// </summary>
         /// <param name="stringToEncode">The string to encode.</param>
-        /// <param name="addStartStop">Whether to wrap the data in start (<value>U+E000</value>) and stop (<value>U+E001</value>) characters.</param>
         /// <param name="unencodableSubstitute">The character with which to substitute unencodable characters, or <c>null</c> to throw
         /// an exception instead.</param>
         /// <returns>The encoded barcode as a list of booleans where <value>true</value> is on and <value>false</value> is off.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="unencodableSubstitute"/> is <c>null</c> and an unencodable
         /// character is encountered in <paramref name="stringToEncode"/>.</exception>
-        public ImmutableArray<bool> EncodeString(string stringToEncode, bool addStartStop = true, char? unencodableSubstitute = null)
+        public ImmutableArray<bool> EncodeString(string stringToEncode, char? unencodableSubstitute = null)
         {
             var actualStringToEncode = stringToEncode;
-            if (addStartStop)
+            if (AddStartStop)
             {
-                actualStringToEncode = "\uE000" + stringToEncode + "\uE001";
+                actualStringToEncode =
+                    BarcodeSharpConstants.StartCharacter + stringToEncode + BarcodeSharpConstants.StopCharacter;
             }
             if (unencodableSubstitute.HasValue)
             {
