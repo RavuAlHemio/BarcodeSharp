@@ -306,22 +306,75 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         {
             return stringToEncode
                 .OfType<char>()
-                .All(c => CoreMapping.ContainsKey(c) || Mapping128A.ContainsKey(c) || Mapping128B.ContainsKey(c));
+                .All(IsEncodable);
+        }
+
+        public bool IsEncodable(char c)
+        {
             // no need to check code C because all characters in code C are also in code A or code B
+            return CoreMapping.ContainsKey(c) || Mapping128A.ContainsKey(c) || Mapping128B.ContainsKey(c);
         }
 
         /// <summary>
         /// Encodes the given string as a Code128 barcode.
         /// </summary>
         /// <param name="stringToEncode">The string to encode.</param>
-        /// <param name="addStartStop">Whether to wrap the data in start (<value>U+E000</value>) and stop (<value>U+E001</value>) characters.</param>
         /// <param name="unencodableSubstitute">The character with which to substitute unencodable characters, or <c>null</c> to throw
         /// an exception instead.</param>
         /// <returns>The encoded barcode as a list of booleans where <value>true</value> is on and <value>false</value> is off.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="unencodableSubstitute"/> is <c>null</c> and an unencodable
         /// character is encountered in <paramref name="stringToEncode"/>.</exception>
-        public ImmutableArray<bool> EncodeString(string stringToEncode, bool addStartStop = true, char? unencodableSubstitute = null)
+        public virtual ImmutableArray<bool> EncodeString(string stringToEncode, char? unencodableSubstitute = null)
         {
+            string actualStringToEncode = stringToEncode;
+            if (unencodableSubstitute.HasValue)
+            {
+                if (!IsEncodable(unencodableSubstitute.Value))
+                {
+                    throw new ArgumentException("the substitute character is not encodable", nameof(unencodableSubstitute));
+                }
+
+                actualStringToEncode = new string(
+                    actualStringToEncode
+                        .OfType<char>()
+                        .Select(c => IsEncodable(c) ? c : unencodableSubstitute.Value)
+                        .ToArray()
+                );
+            }
+            if (!IsEncodable(stringToEncode))
+            {
+                throw new ArgumentException("the string is not encodable using this symbology", nameof(stringToEncode));
+            }
+
+            // TODO
+            throw new NotImplementedException();
+        }
+
+        protected static ImmutableList<int> EncodeNaively(string stringToEncode)
+        {
+            // handle the degenerate case
+            if (stringToEncode.Length == 0)
+            {
+                return ImmutableList.Create(CoreMapping[StartA]);
+            }
+
+            ImmutableList<int>.Builder builder = ImmutableList.CreateBuilder<int>();
+            bool mappingA;
+
+            Debug.Assert(stringToEncode.Length > 0);
+            if (Mapping128A.ContainsKey(stringToEncode[0]))
+            {
+                mappingA = true;
+            }
+            else
+            {
+                Debug.Assert(Mapping128B.ContainsKey(stringToEncode[0]));
+                mappingA = false;
+            }
+
+            builder.Add(CoreMapping[mappingA ? StartA : StartB]);
+
+            // TODO
             throw new NotImplementedException();
         }
     }
