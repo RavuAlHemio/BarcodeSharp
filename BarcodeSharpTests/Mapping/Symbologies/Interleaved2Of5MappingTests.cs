@@ -60,8 +60,11 @@ namespace BarcodeSharpTests.Mapping.Symbologies
                 true, true, false, true,
             };
 
-            var mapping = new Interleaved2Of5Mapping();
-            var encoded = mapping.EncodeString("1337", true);
+            var mapping = new Interleaved2Of5Mapping
+            {
+                AddStartStop = true
+            };
+            var encoded = mapping.EncodeString("1337");
 
             Assert.Equal((IEnumerable<bool>)barcode1337, (IEnumerable<bool>)encoded);
         }
@@ -69,17 +72,23 @@ namespace BarcodeSharpTests.Mapping.Symbologies
         [Fact]
         public void EncodeWrongLengthThrow()
         {
-            var mapping = new Interleaved2Of5Mapping();
+            var mapping = new Interleaved2Of5Mapping
+            {
+                AddStartStop = true
+            };
 
-            Assert.Throws<ArgumentException>(() => mapping.EncodeString("123", true));
+            Assert.Throws<ArgumentException>(() => mapping.EncodeString("123"));
         }
 
         [Fact]
         public void EncodeUnencodableThrow()
         {
-            var mapping = new Interleaved2Of5Mapping();
+            var mapping = new Interleaved2Of5Mapping
+            {
+                AddStartStop = true
+            };
 
-            Assert.Throws<ArgumentException>(() => mapping.EncodeString("\u0CA0__\u0CA0", true));
+            Assert.Throws<ArgumentException>(() => mapping.EncodeString("\u0CA0__\u0CA0"));
         }
 
         [Fact]
@@ -97,8 +106,11 @@ namespace BarcodeSharpTests.Mapping.Symbologies
                 true, true, false, true,
             };
 
-            var mapping = new Interleaved2Of5Mapping();
-            var encoded = mapping.EncodeString("AB", true, '0');
+            var mapping = new Interleaved2Of5Mapping
+            {
+                AddStartStop = true
+            };
+            var encoded = mapping.EncodeString("AB", '0');
 
             Assert.Equal((IEnumerable<bool>)barcodeZeroZero, (IEnumerable<bool>)encoded);
         }
@@ -106,10 +118,13 @@ namespace BarcodeSharpTests.Mapping.Symbologies
         [Fact]
         public void ThrowWhenSubstituteIsUnencodable()
         {
-            var mapping = new Interleaved2Of5Mapping();
+            var mapping = new Interleaved2Of5Mapping
+            {
+                AddStartStop = true
+            };
 
             // the barcode is valid but the substitute is unencodable
-            Assert.Throws<ArgumentException>(() => mapping.EncodeString("12", true, '!'));
+            Assert.Throws<ArgumentException>(() => mapping.EncodeString("12", '!'));
         }
     }
 }

@@ -103,8 +103,11 @@ namespace BarcodeSharpTests.Mapping.Symbologies
                 true, false, false, true, false, true, true, false, true, true, false, true, false,
             };
 
-            var mapping = new Code39Mapping();
-            var encoded = mapping.EncodeString("LOL", true);
+            var mapping = new Code39Mapping
+            {
+                AddStartStop = true
+            };
+            var encoded = mapping.EncodeString("LOL");
 
             Assert.Equal((IEnumerable<bool>)barcodeLOL, (IEnumerable<bool>)encoded);
         }
@@ -139,8 +142,11 @@ namespace BarcodeSharpTests.Mapping.Symbologies
                 true, false, false, true, false, true, true, false, true, true, false, true, false,
             };
 
-            var mapping = new Code39Mapping();
-            var encoded = mapping.EncodeString("HHGG42", true);
+            var mapping = new Code39Mapping
+            {
+                AddStartStop = true
+            };
+            var encoded = mapping.EncodeString("HHGG42");
 
             Assert.Equal((IEnumerable<bool>)barcodeHHGG42, (IEnumerable<bool>)encoded);
         }
@@ -148,9 +154,12 @@ namespace BarcodeSharpTests.Mapping.Symbologies
         [Fact]
         public void EncodeUnencodableThrow()
         {
-            var mapping = new Code39Mapping();
+            var mapping = new Code39Mapping
+            {
+                AddStartStop = true
+            };
 
-            Assert.Throws<ArgumentException>(() => mapping.EncodeString("\u0CA0_\u0CA0", true));
+            Assert.Throws<ArgumentException>(() => mapping.EncodeString("\u0CA0_\u0CA0"));
         }
 
         [Fact]
@@ -174,8 +183,11 @@ namespace BarcodeSharpTests.Mapping.Symbologies
                 true, false, false, true, false, true, true, false, true, true, false, true, false,
             };
 
-            var mapping = new Code39Mapping();
-            var encoded = mapping.EncodeString("\u0CA0_\u0CA0", true, '.');
+            var mapping = new Code39Mapping
+            {
+                AddStartStop = true
+            };
+            var encoded = mapping.EncodeString("\u0CA0_\u0CA0", '.');
 
             Assert.Equal((IEnumerable<bool>)barcodeDotDotDot, (IEnumerable<bool>)encoded);
         }
@@ -183,10 +195,13 @@ namespace BarcodeSharpTests.Mapping.Symbologies
         [Fact]
         public void ThrowWhenSubstituteIsUnencodable()
         {
-            var mapping = new Code39Mapping();
+            var mapping = new Code39Mapping
+            {
+                AddStartStop = true
+            };
 
             // the barcode is valid but the substitute is unencodable
-            Assert.Throws<ArgumentException>(() => mapping.EncodeString("123", true, '_'));
+            Assert.Throws<ArgumentException>(() => mapping.EncodeString("123", '_'));
         }
     }
 }
