@@ -11,6 +11,9 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
     /// </summary>
     public class Code128Mapping : IOneDimensionalBarcodeMapping
     {
+        internal delegate Tuple<int, string> PrefixEncodeFunction(string prefix);
+        internal delegate ImmutableList<int> VariantFunction(string stringToEncode, int maxCount, bool justSwitched);
+
         internal const char StartA = '\uE011';
         internal const char StartB = '\uE012';
         internal const char StartC = '\uE013';
@@ -49,6 +52,8 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
         /// Whether <see cref="EncodeString" /> should try to find the most efficient encoding available.
         /// </summary>
         public bool Optimize { get; set; }
+
+        internal bool ForceExhaustiveOptimization { get; set; }
 
         static Code128Mapping()
         {
@@ -435,9 +440,275 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
             return builder.ToImmutable();
         }
 
-        protected internal virtual ImmutableList<int> FindOptimalEncoding(string stringToEncode, int upperLimit)
+        protected internal virtual ImmutableList<int> FindOptimalEncoding(string stringToEncode, int naiveCount)
         {
-            throw new NotImplementedException();
+            // handle the degenerate case
+            if (stringToEncode.Length == 0)
+            {
+                return ImmutableList.Create(CoreMapping[StartA]);
+            }
+
+            ImmutableList<int> bestVariant = AttemptVariants(
+                stringToEncode,
+                naiveCount,
+                CreateVariantTuple(AttemptEncodingA, CoreMapping[StartA]),
+                CreateVariantTuple(AttemptEncodingB, CoreMapping[StartB]),
+                CreateVariantTuple(AttemptEncodingC, CoreMapping[StartC])
+            );
+            Debug.Assert(bestVariant != null);
+            return bestVariant;
+        }
+
+        internal ImmutableList<int> AttemptVariantEncoding(PrefixEncodeFunction variantEncodePrefix,
+                Tuple<VariantFunction, int>[] otherVariantsAndSwitchValues,
+                Tuple<PrefixEncodeFunction, int> shiftableVariantAndShiftValue,
+                string stringToEncode, int maxCount, bool justSwitched
+        )
+        {
+            if (ForceExhaustiveOptimization)
+            {
+                maxCount = int.MaxValue;
+            }
+
+            if (stringToEncode.Length == 0)
+            {
+                // done!
+                return ImmutableList<int>.Empty;
+            }
+
+            if (maxCount <= 0)
+            {
+                // we already found a better solution
+                return null;
+            }
+
+            ImmutableList<int> bestVariant = null;
+
+            // try encoding
+            Tuple<int, string> thisVariantEncoded = variantEncodePrefix(stringToEncode);
+            if (thisVariantEncoded != null)
+            {
+                // the current variant succeeded in encoding the prefix
+                string restString = thisVariantEncoded.Item2;
+                Debug.Assert(restString.Length < stringToEncode.Length);
+
+                // descend!
+                ImmutableList<int> rest = AttemptVariantEncoding(
+                    variantEncodePrefix,
+                    otherVariantsAndSwitchValues,
+                    shiftableVariantAndShiftValue,
+                    restString,
+                    maxCount - 1,
+                    justSwitched: false
+                );
+                if (rest != null)
+                {
+                    // the rest, prefixed with the returned value
+                    bestVariant = rest.Insert(0, thisVariantEncoded.Item1);
+                }
+            }
+
+            if (justSwitched)
+            {
+                // no sense switching twice or shifting right after a switch
+                return bestVariant;
+            }
+
+            // try switching to one of the other two variants
+            ImmutableList<int> bestSwitchVariant = AttemptVariants(
+                stringToEncode,
+                maxCount,
+                otherVariantsAndSwitchValues
+            );
+            if (bestSwitchVariant != null)
+            {
+                if (bestVariant == null || bestVariant.Count > bestSwitchVariant.Count)
+                {
+                    // this one's more efficient
+                    bestVariant = bestSwitchVariant;
+                }
+            }
+
+            if (shiftableVariantAndShiftValue != null)
+            {
+                // try shifting instead of outright switching
+                Tuple<int, string> shiftedResult
+                    = shiftableVariantAndShiftValue.Item1.Invoke(stringToEncode);
+
+                if (shiftedResult != null)
+                {
+                    int shiftedPrefixValue = shiftedResult.Item1;
+                    string restAfterShift = shiftedResult.Item2;
+
+                    ImmutableList<int> restMe = AttemptVariantEncoding(
+                        variantEncodePrefix,
+                        otherVariantsAndSwitchValues,
+                        shiftableVariantAndShiftValue,
+                        restAfterShift,
+                        maxCount - 2,
+                        justSwitched: false
+                    );
+                    if (restMe != null)
+                    {
+                        ImmutableList<int>.Builder shiftedVariantBuilder = ImmutableList.CreateBuilder<int>();
+                        shiftedVariantBuilder.Add(shiftableVariantAndShiftValue.Item2);
+                        shiftedVariantBuilder.Add(shiftedPrefixValue);
+                        shiftedVariantBuilder.AddRange(restMe);
+
+                        if (bestVariant == null || bestVariant.Count > shiftedVariantBuilder.Count)
+                        {
+                            bestVariant = shiftedVariantBuilder.ToImmutable();
+                        }
+                    }
+                }
+            }
+
+            // done
+            return bestVariant;
+        }
+
+        internal ImmutableList<int> AttemptEncodingA(string stringToEncode, int maxCount,
+                bool justSwitched)
+        {
+            return AttemptVariantEncoding(
+                PrefixEncodeA,
+                new[] {
+                    CreateVariantTuple(AttemptEncodingB, Mapping128A[SwitchB]),
+                    CreateVariantTuple(AttemptEncodingC, Mapping128A[SwitchC])
+                },
+                CreateShiftTuple(PrefixEncodeB, Mapping128A[ShiftB]),
+                stringToEncode, maxCount, justSwitched
+            );
+        }
+
+        internal ImmutableList<int> AttemptEncodingB(string stringToEncode, int maxCount,
+                bool justSwitched)
+        {
+            return AttemptVariantEncoding(
+                PrefixEncodeB,
+                new[] {
+                    CreateVariantTuple(AttemptEncodingA, Mapping128B[SwitchA]),
+                    CreateVariantTuple(AttemptEncodingC, Mapping128B[SwitchC])
+                },
+                CreateShiftTuple(PrefixEncodeA, Mapping128B[ShiftA]),
+                stringToEncode, maxCount, justSwitched
+            );
+        }
+
+        internal ImmutableList<int> AttemptEncodingC(string stringToEncode, int maxCount,
+                bool justSwitched)
+        {
+            return AttemptVariantEncoding(
+                PrefixEncodeC,
+                new[] {
+                    CreateVariantTuple(AttemptEncodingA, SpecialMapping128C[SwitchA]),
+                    CreateVariantTuple(AttemptEncodingB, SpecialMapping128C[SwitchB])
+                },
+                null,  // no shifting from B
+                stringToEncode, maxCount, justSwitched
+            );
+        }
+
+        internal Tuple<int, string> PrefixEncodeA(string prefix)
+        {
+            Debug.Assert(prefix.Length > 0);
+            if (Mapping128A.ContainsKey(prefix[0]))
+            {
+                return Tuple.Create(Mapping128A[prefix[0]], prefix.Substring(1));
+            }
+
+            return null;
+        }
+
+        internal Tuple<int, string> PrefixEncodeB(string prefix)
+        {
+            Debug.Assert(prefix.Length > 0);
+            if (Mapping128B.ContainsKey(prefix[0]))
+            {
+                return Tuple.Create(Mapping128B[prefix[0]], prefix.Substring(1));
+            }
+
+            return null;
+        }
+
+        internal Tuple<int, string> PrefixEncodeC(string prefix)
+        {
+            Debug.Assert(prefix.Length > 0);
+
+            if (prefix.Length > 1)
+            {
+                if (prefix[0] >= '0' && prefix[0] <= '9' && prefix[1] >= '0' && prefix[1] <= '9')
+                {
+                    int tens = prefix[0] - '0';
+                    int ones = prefix[1] - '0';
+
+                    return Tuple.Create(
+                        10 * tens + ones,
+                        prefix.Substring(2)
+                    );
+                }
+            }
+
+            if (SpecialMapping128C.ContainsKey(prefix[0]))
+            {
+                return Tuple.Create(SpecialMapping128C[prefix[0]], prefix.Substring(1));
+            }
+
+            return null;
+        }
+
+        internal static ImmutableList<int> AttemptVariants(string stringToEncode, int maxCount,
+                params Tuple<VariantFunction, int>[] variantMethodsAndSwitchValues)
+        {
+            ImmutableList<int> bestVariant = null;
+
+            foreach (var variantMethodAndSwitchValue in variantMethodsAndSwitchValues)
+            {
+                VariantFunction variantMethod = variantMethodAndSwitchValue.Item1;
+                int switchValue = variantMethodAndSwitchValue.Item2;
+
+                ImmutableList<int> variant = variantMethod(
+                    stringToEncode,
+                    (bestVariant?.Count ?? maxCount) - 1,
+                    justSwitched: true
+                );
+                if (variant != null && (bestVariant == null || bestVariant.Count - 1 > variant.Count))
+                {
+                    bestVariant = variant.Insert(0, switchValue);
+                }
+            }
+
+            return bestVariant;
+        }
+
+        internal static Tuple<VariantFunction, int> CreateVariantTuple(VariantFunction variantMethod, int switchValue)
+        {
+            return Tuple.Create(variantMethod, switchValue);
+        }
+
+        internal static Tuple<PrefixEncodeFunction, int> CreateShiftTuple(PrefixEncodeFunction prefixMethod, int shiftValue)
+        {
+            return Tuple.Create(prefixMethod, shiftValue);
+        }
+
+        protected internal static bool IsPrefixInCode128C(string str)
+        {
+            if (str.Length < 2)
+            {
+                return false;
+            }
+
+            if (str[0] >= '0' && str[0] <= '9' && str[1] >= '0' && str[1] <= '9')
+            {
+                return true;
+            }
+
+            if (SpecialMapping128C.ContainsKey(str[1]))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         protected internal virtual int CalculateChecksum(ImmutableList<int> values)
