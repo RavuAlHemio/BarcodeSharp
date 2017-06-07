@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <Description>Portable .NET library for generating barcode mappings.</Description>
-    <Copyright>Copyright © 2016 Ondřej Hošek</Copyright>
+    <Copyright>Copyright © 2016–2017 Ondřej Hošek</Copyright>
     <AssemblyTitle>RavuAlHemio.BarcodeSharp</AssemblyTitle>
-    <VersionPrefix>0.0.5</VersionPrefix>
+    <VersionPrefix>0.0.6</VersionPrefix>
     <Authors>Ondřej Hošek</Authors>
     <TargetFrameworks>netstandard1.0;net45</TargetFrameworks>
     <DebugType>portable</DebugType>
