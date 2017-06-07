@@ -398,18 +398,15 @@ namespace RavuAlHemio.BarcodeSharp.Mapping.Symbologies
             }
 
             ImmutableList<int>.Builder builder = ImmutableList.CreateBuilder<int>();
-            bool mappingA;
 
-            Debug.Assert(stringToEncode.Length > 0);
-            if (Mapping128A.ContainsKey(stringToEncode[0]))
-            {
-                mappingA = true;
-            }
-            else
-            {
-                Debug.Assert(Mapping128B.ContainsKey(stringToEncode[0]));
-                mappingA = false;
-            }
+            int aCount = stringToEncode
+                .OfType<char>()
+                .Count(c => Mapping128A.ContainsKey(c));
+            int bCount = stringToEncode
+                .OfType<char>()
+                .Count(c => Mapping128B.ContainsKey(c));
+
+            bool mappingA = (aCount >= bCount);
 
             builder.Add(CoreMapping[mappingA ? StartA : StartB]);
 

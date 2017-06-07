@@ -142,14 +142,11 @@ namespace BarcodeSharpTests.Mapping.Symbologies
         {
             var barcode = new[]
             {
-                // start A = 103
-                true, true, false, true, false, false, false, false, true, false, false,
+                // start B = 104
+                true, true, false, true, false, false,  true, false, false, false, false,
 
-                // A(O) = 47
+                // B(O) = 47
                 true, false, false, false, true, true, true, false, true, true, false,
-
-                // A(SwitchB) = 100
-                true, false, true, true, true, true, false, true, true, true, false,
 
                 // B(n) = 78
                 true, true, false, false, false, false, true, false, true, false, false,
@@ -199,8 +196,8 @@ namespace BarcodeSharpTests.Mapping.Symbologies
                 // B(e) = 69
                 true, false, true, true, false, false, true, false, false, false, false,
 
-                // check character = 20
-                true, true, false, false, true, false, false, true, true, true, false,
+                // check character = 6
+                true, false, false, true, true, false, false, true, false, false, false,
 
                 // stop = 106
                 true, true, false, false, false, true, true, true, false, true, false,
