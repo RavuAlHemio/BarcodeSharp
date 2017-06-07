@@ -16,7 +16,7 @@ namespace RavuAlHemio.BarcodeSharp
         /// Tuples whose first item is the color of the bar and whose second item is the total width of that
         /// bar.
         /// </returns>
-        public static IEnumerable<Tuple<bool, int>> BarWidths(ImmutableArray<bool> bars)
+        public static IEnumerable<Tuple<bool, int>> BarWidths(IEnumerable<bool> bars)
         {
             bool previousBar = false;
             int currentCount = 0;
